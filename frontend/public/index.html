@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERP ACME - Gestión de Inventario</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Sistema ERP - Ferreterías ACME</h1>
+    
+    <div class="form">
+        <h3>Registrar Nuevo Producto</h3>
+        <input type="text" id="nombre" placeholder="Nombre del producto (ej: Martillo)">
+        <input type="number" id="precio" placeholder="Precio (CLP)">
+        <input type="number" id="stock" placeholder="Cantidad en Stock">
+        <button onclick="agregarProducto()">Guardar Producto</button>
+    </div>
+
+    <h3>Inventario de Productos</h3>
+    <table id="tabla-productos">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre del Producto</th>
+                <th>Precio</th>
+                <th>Stock</th>
+            </tr>
+        </thead>
+        <tbody>
+            </tbody>
+    </table>
+
+    <script>
+        // Función para cargar los productos desde la API
+        async function cargarProductos() {
+            try {
+                const respuesta = await fetch('/api/productos');
+                const productos = await respuesta.json();
+                
+                const tbody = document.querySelector('#tabla-productos tbody');
+                tbody.innerHTML = ''; // Limpiar la tabla antes de cargar
+
+                productos.forEach(producto => {
+                    const fila = `
+                        <tr>
+                            <td>${producto.id}</td>
+                            <td>${producto.nombre}</td>
+                            <td>$${producto.precio.toLocaleString('es-CL')}</td>
+                            <td>${producto.stock}</td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += fila;
+                });
+            } catch (error) {
+                console.error('Error al cargar productos:', error);
+            }
+        }
+
+        // Función para enviar un nuevo producto al servidor
+        async function agregarProducto() {
+            const nombre = document.getElementById('nombre').value;
+            const precio = document.getElementById('precio').value;
+            const stock = document.getElementById('stock').value;
+
+            if (!nombre || !precio || !stock) {
+                alert('Por favor, completa todos los campos.');
+                return;
+            }
+
+            const nuevoProducto = { nombre, precio, stock };
+
+            try {
+                const respuesta = await fetch('/api/productos', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(nuevoProducto)
+                });
+
+                if (respuesta.ok) {
+                    // Limpiar campos del formulario
+                    document.getElementById('nombre').value = '';
+                    document.getElementById('precio').value = '';
+                    document.getElementById('stock').value = '';
+                    
+                    // Recargar la lista de productos
+                    cargarProductos();
+                }
+            } catch (error) {
+                console.error('Error al agregar producto:', error);
+            }
+        }
+
+        // Cargar los productos automáticamente al abrir la página
+        window.onload = cargarProductos;
+    </script>
+</body>
+</html>

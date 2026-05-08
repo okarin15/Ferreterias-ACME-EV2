@@ -1,0 +1,39 @@
+services:
+  db:
+    image: mariadb:10.11
+    container_name: acme-db
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: root_password
+      MARIADB_DATABASE: acme_db
+      MARIADB_USER: user_acme
+      MARIADB_PASSWORD: password_acme
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db_data:/var/lib/mysql
+    networks:
+      - acme-net
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build: ./frontend
+    container_name: acme-frontend
+    restart: always
+    ports:
+      - "80:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - acme-net
+
+networks:
+  acme-net:
+    driver: bridge
+
+volumes:
+  db_data:
