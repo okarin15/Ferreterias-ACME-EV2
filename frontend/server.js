@@ -22,7 +22,7 @@ db.connect(err => {
     console.log('Conectado exitosamente a MariaDB ACME');
 });
 
-// API para obtener productos
+// API para obtener productos (Consulta)
 app.get('/api/productos', (req, res) => {
     db.query('SELECT * FROM productos', (err, results) => {
         if (err) return res.status(500).send(err);
@@ -30,13 +30,22 @@ app.get('/api/productos', (req, res) => {
     });
 });
 
-// API para agregar productos
+// API para agregar productos (Ingreso)
 app.post('/api/productos', (req, res) => {
     const { nombre, precio, stock } = req.body;
     db.query('INSERT INTO productos (nombre, precio, stock) VALUES (?, ?, ?)', 
     [nombre, precio, stock], (err, results) => {
         if (err) return res.status(500).send(err);
         res.json({ id: results.insertId, ...req.body });
+    });
+});
+
+// API para eliminar productos (Gestión)
+app.delete('/api/productos/:id', (req, res) => {
+    const { id } = req.params;
+    db.query('DELETE FROM productos WHERE id = ?', [id], (err, result) => {
+        if (err) return res.status(500).send(err);
+        res.json({ message: "Producto eliminado correctamente" });
     });
 });
 
