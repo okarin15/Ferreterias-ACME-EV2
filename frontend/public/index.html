@@ -25,6 +25,7 @@
                 <th>Nombre del Producto</th>
                 <th>Precio</th>
                 <th>Stock</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -48,12 +49,31 @@
                             <td>${producto.nombre}</td>
                             <td>$${producto.precio.toLocaleString('es-CL')}</td>
                             <td>${producto.stock}</td>
+                                <td>
+                                    <button onclick="eliminarProducto(${producto.id})" style="background-color: #d93025;">Eliminar</button>
+                                </td>
                         </tr>
                     `;
                     tbody.innerHTML += fila;
                 });
             } catch (error) {
                 console.error('Error al cargar productos:', error);
+            }
+        }
+
+        async function eliminarProducto(id) {
+            if (!confirm('¿Estás seguro de eliminar este producto?')) return;
+
+            try {
+                const respuesta = await fetch(`/api/productos/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (respuesta.ok) {
+                    cargarProductos(); // Recargar la tabla
+                }
+            } catch (error) {
+                console.error('Error al eliminar producto:', error);
             }
         }
 
