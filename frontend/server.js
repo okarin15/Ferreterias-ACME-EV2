@@ -6,23 +6,42 @@ const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 
-// Conexión a MariaDB usando la red interna 'acme-net'
-const db = mysql.createConnection({
-    host: 'db', 
+const dbConfig = {
+    host: 'db',
     user: 'user_acme',
     password: 'password_acme',
     database: 'acme_db'
-});
+};
 
-db.connect(err => {
-    if (err) {
-        console.error('Error conectando a MariaDB:', err);
-        return;
-    }
-    console.log('Conectado exitosamente a MariaDB ACME');
-});
+let db;
 
-// API para obtener productos (Consulta)
+function conectarBD() {
+    db = mysql.createConnection(dbConfig);
+
+    db.connect(err => {
+        if (err) {
+            console.error('Error conectando a MariaDB (reintentando en 5s):', err.message);
+            setTimeout(conectarBD, 5000); // Reintento automático
+        } else {
+            console.log('Conectado exitosamente a MariaDB ACME');
+        }
+    });
+
+    // Manejador de errores para caídas de conexión inesperadas
+    db.on('error', err => {
+        console.error('Error en la base de datos:', err.code);
+        if (err.code === 'PROTOCOL_CONNECTION_LOST' || err.code === 'ECONNREFUSED') {
+            console.log('Reconectando...');
+            conectarBD();
+        } else {
+            throw err;
+        }
+    });
+}
+
+conectarBD();
+
+// Endpoints (mantener igual que antes)
 app.get('/api/productos', (req, res) => {
     db.query('SELECT * FROM productos', (err, results) => {
         if (err) return res.status(500).send(err);
@@ -30,7 +49,6 @@ app.get('/api/productos', (req, res) => {
     });
 });
 
-// API para agregar productos (Ingreso)
 app.post('/api/productos', (req, res) => {
     const { nombre, precio, stock } = req.body;
     db.query('INSERT INTO productos (nombre, precio, stock) VALUES (?, ?, ?)', 
@@ -40,12 +58,10 @@ app.post('/api/productos', (req, res) => {
     });
 });
 
-// API para eliminar productos (Gestión)
 app.delete('/api/productos/:id', (req, res) => {
-    const { id } = req.params;
-    db.query('DELETE FROM productos WHERE id = ?', [id], (err, result) => {
+    db.query('DELETE FROM productos WHERE id = ?', [req.params.id], (err) => {
         if (err) return res.status(500).send(err);
-        res.json({ message: "Producto eliminado correctamente" });
+        res.json({ message: "Eliminado" });
     });
 });
 
