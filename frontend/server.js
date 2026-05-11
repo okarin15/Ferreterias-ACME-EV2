@@ -7,7 +7,7 @@ app.use(express.json());
 app.use(express.static('public'));
 
 const dbConfig = {
-    host: 'db',
+    host: '172.31.37.144',
     user: 'user_acme',
     password: 'password_acme',
     database: 'acme_db'
